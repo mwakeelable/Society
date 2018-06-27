@@ -1,4 +1,4 @@
-package com.wakeel.society;
+package com.wakeel.society.view;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,33 +14,54 @@ import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+import com.wakeel.society.R;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class LoginActivity extends AppCompatActivity {
     CallbackManager callbackManager;
     private static final String EMAIL = "email";
-    LoginButton loginButton;
     AccessToken accessToken = AccessToken.getCurrentAccessToken();
+    ArrayList permissions;
     boolean isLoggedIn = accessToken != null && !accessToken.isExpired();
+    public static String TAG = "SocialLogin";
+    @BindView(R.id.login_button)
+    LoginButton fbLoginButton;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        FacebookSdk.sdkInitialize(getApplicationContext());
-        AppEventsLogger.activateApp(this);
+        ButterKnife.bind(this);
         callbackManager = CallbackManager.Factory.create();
-        loginButton = findViewById(R.id.login_button);
-        loginButton.setReadPermissions(Arrays.asList(EMAIL));
-        // If you are using in a fragment, call loginButton.setFragment(this);
-
-        // Callback registration
-        loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+        permissions = new ArrayList();
+        permissions.add("public_profile");
+        permissions.add("email");
+        permissions.add("user_friends");
+        permissions.add("user_posts");
+        fbLoginButton.setReadPermissions(permissions);
+        fbLoginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
                 // App code
                 Log.d("fbLogin", loginResult.getAccessToken().getUserId());
+                Intent homeIntent = new Intent(LoginActivity.this,HomeActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("accessToken",loginResult.getAccessToken().getToken());
+                homeIntent.putExtras(bundle);
+                startActivity(homeIntent);
+                LoginActivity.this.finish();
             }
 
             @Override
@@ -56,6 +77,7 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
